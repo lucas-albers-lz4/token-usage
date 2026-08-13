@@ -204,7 +204,7 @@ def main():
         )
         return 1
 
-    snap = {"date": today, "machine": platform.node() or platform.system()}
+    snap = {"date": today}
     try:
         usage, user_id = fetch_usage(token)
         snap["ok"] = True
