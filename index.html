@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>token-usage · LLM provider credit tracker</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<header>
+  <h1>token-usage</h1>
+  <p class="sub">Daily snapshots of LLM provider credits &amp; spend, collected by scheduled jobs and committed as data.</p>
+</header>
+<main>
+  <div id="status" class="status" hidden></div>
+  <section id="cards" class="cards"></section>
+  <p id="updated" class="meta"></p>
+</main>
+<footer>
+  <p>Data lives in <code>data/usage.json</code>, <code>data/cursor.json</code>, <code>data/opencode.json</code> · API keys never leave repo secrets / your machines</p>
+</footer>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

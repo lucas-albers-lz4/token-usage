@@ -1,0 +1,48 @@
+{
+  "snapshots": [
+    {
+      "date": "2026-08-13",
+      "processed": 7659,
+      "skipped": 0,
+      "since": 1784037253533,
+      "until": 1786595385551,
+      "last_processed_id": "msg_ff96220cf001Phy1HbmNo6zIgL",
+      "last_processed_time": 1786595385551,
+      "totals": {
+        "n": 7659,
+        "input": 41768373,
+        "output": 2899625,
+        "reasoning": 4397224,
+        "cache_read": 369245007,
+        "cache_write": 854246,
+        "cost": 26.854745
+      },
+      "by_provider": {
+        "opencode-go": {
+          "n": 1192,
+          "input": 4820715,
+          "output": 747712,
+          "cost": 15.444863
+        },
+        "opencode": {
+          "n": 6458,
+          "input": 36888615,
+          "output": 2137145,
+          "cost": 11.391978
+        },
+        "deepseek": {
+          "n": 9,
+          "input": 59043,
+          "output": 14768,
+          "cost": 0.017904
+        }
+      },
+      "delta24h": {
+        "n": 1208,
+        "input": 6864235,
+        "output": 312105,
+        "cost": 5.056337
+      }
+    }
+  ]
+}
