@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- CSP via meta: GitHub Pages does not serve custom headers (_headers is
+     inert on github.com — verified luna gate 2026-08-13). No inline
+     scripts/styles or external origins, so 'self' is sufficient. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'">
 <title>token-usage · LLM provider credit tracker</title>
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
