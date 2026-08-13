@@ -1,0 +1,21 @@
+# Security-only Dependabot version config (low noise).
+# Pair with: Settings -> Code security -> Dependabot security updates = Enabled.
+# Only the github-actions ecosystem applies (token-usage has workflows, no
+# docker/npm/pip/gomod manifests).
+#
+# Docs:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-patch"
+          - "version-update:semver-minor"
+          - "version-update:semver-major"

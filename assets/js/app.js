@@ -116,7 +116,7 @@ function renderCursor(cursor) {
   }
   if (!latest.ok) {
     return card("Cursor", chipErr(), "—",
-      [["error", esc(latest.error || "unknown")], ["machine", esc(latest.machine)]], "", latest.date);
+      [["error", esc(latest.error || "unknown")]], "", latest.date);
   }
   const u = latest.usage || {};
   const sumKey = (k) => Object.entries(u)
@@ -124,7 +124,7 @@ function renderCursor(cursor) {
     .reduce((s, [, v]) => s + v[k], 0);
   const reqUsed = sumKey("requestsUsed");
   const reqLim = sumKey("requestsLimit");
-  const rows = [["machine", esc(latest.machine)], ["period", esc(latest.startOfMonth || "—")]];
+  const rows = [["period", esc(latest.startOfMonth || "—")]];
   let big = `<small>usage data</small>`;
   if (reqLim > 0) {
     big = `${reqUsed} <small>/ ${reqLim} reqs</small>`;
