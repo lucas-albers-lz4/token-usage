@@ -136,8 +136,8 @@ function renderCursor(cursor) {
       rows.push(["used", `${plan.totalPercentUsed.toFixed(1)}%`]);
     }
   } else {
-    const u = latest.usage || {};
-    const ks = Object.keys(u).filter((k) => k !== "startOfMonth").slice(0, 3);
+    const models = latest.legacyModels || {};
+    const ks = Object.keys(models).slice(0, 3);
     rows.push(["models", esc(ks.join(", ") || "—")]);
   }
   const series = snaps

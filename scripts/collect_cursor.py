@@ -180,7 +180,13 @@ def compact_summary(summary):
 
 def plan_is_usable(snap):
     plan = (snap or {}).get("plan") or {}
-    return isinstance(plan.get("used"), (int, float)) and isinstance(plan.get("limit"), (int, float))
+    used, limit = plan.get("used"), plan.get("limit")
+    return (
+        isinstance(used, (int, float))
+        and isinstance(limit, (int, float))
+        and not isinstance(used, bool)
+        and not isinstance(limit, bool)
+    )
 
 
 def compact_legacy_usage(usage):

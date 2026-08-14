@@ -57,6 +57,9 @@ class SummaryTests(unittest.TestCase):
         self.assertIsNone(snap["plan"])
         self.assertFalse(plan_is_usable(snap))
 
+    def test_boolean_plan_counters_are_not_usable(self):
+        self.assertFalse(plan_is_usable({"plan": {"used": True, "limit": False}}))
+
     def test_compact_legacy_usage_allowlists_counters(self):
         models = compact_legacy_usage(
             {

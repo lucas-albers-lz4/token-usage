@@ -119,6 +119,8 @@ def check_cursor(data, errors):
         legacy = snap.get("legacyModels") if isinstance(snap.get("legacyModels"), dict) else {}
         if not plan_ok and not legacy:
             errors.append(f"{tag}: ok=true needs plan used/limit or non-empty legacyModels")
+        if "userId" in snap:
+            errors.append(f"{tag}: userId must not be committed")
         blob = json.dumps(snap)
         if "eyJ" in blob or ("::" in blob and "user_" in blob):
             errors.append(f"{tag}: snapshot looks like it contains a session token")
