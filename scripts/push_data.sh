@@ -11,7 +11,16 @@
 # CURSOR_REPO_REMOTE / OPENCODE_REPO_REMOTE (default lucas-albers-lz4/token-usage).
 # With no token set, pushes to the existing "origin" remote.
 set -euo pipefail
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
 cd "$(dirname "$0")/.."
+
+ENV_FILE="${TOKEN_USAGE_ENV:-$HOME/.config/token-usage/env}"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$ENV_FILE"
+  set +a
+fi
 
 name="${1:?usage: push_data.sh cursor|opencode}"
 case "$name" in
@@ -43,6 +52,7 @@ else
 fi
 
 $collect
+python3 scripts/validate_data.py --also "$name"
 
 git add "$file"
 if git diff --cached --quiet; then

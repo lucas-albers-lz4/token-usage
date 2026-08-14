@@ -1,1 +1,30 @@
-{"snapshots": []}
+{
+  "snapshots": [
+    {
+      "date": "2026-08-14",
+      "ok": true,
+      "userId": "user_01JBHSXGZYEHA3XF8K0RFKYRXZ",
+      "membershipType": "pro_plus",
+      "limitType": "user",
+      "billingCycleStart": "2026-08-13T20:10:21.000Z",
+      "billingCycleEnd": "2026-09-13T20:10:21.000Z",
+      "plan": {
+        "enabled": true,
+        "used": 4713,
+        "limit": 7000,
+        "remaining": 2287,
+        "autoPercentUsed": 5.64375,
+        "apiPercentUsed": 1.7999999999999998,
+        "totalPercentUsed": 5.179120879120879
+      },
+      "onDemand": {
+        "enabled": false,
+        "used": 0,
+        "limit": null,
+        "remaining": null
+      },
+      "autoModelSelectedDisplayMessage": "You've used 5% of your included total usage",
+      "namedModelSelectedDisplayMessage": "You've used 2% of your included API usage"
+    }
+  ]
+}

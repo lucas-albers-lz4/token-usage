@@ -112,31 +112,37 @@ function renderCursor(cursor) {
   const latest = snaps[snaps.length - 1];
   if (!latest) {
     return card("Cursor", chipMuted("no data yet"), "—",
-      [["setup", "run <code>scripts/push_data.sh cursor</code> daily on a Cursor machine"]], "");
+      [["setup", "run <code>./scripts/token_usage.sh install cursor</code> on this Mac"]], "");
   }
   if (!latest.ok) {
     return card("Cursor", chipErr(), "—",
       [["error", esc(latest.error || "unknown")]], "", latest.date);
   }
-  const u = latest.usage || {};
-  const sumKey = (k) => Object.entries(u)
-    .filter(([mk, v]) => mk !== "startOfMonth" && v && typeof v === "object" && typeof v[k] === "number")
-    .reduce((s, [, v]) => s + v[k], 0);
-  const reqUsed = sumKey("requestsUsed");
-  const reqLim = sumKey("requestsLimit");
-  const rows = [["period", esc(latest.startOfMonth || "—")]];
+  const plan = latest.plan || {};
+  const onDemand = latest.onDemand || {};
+  const cycle = latest.billingCycleStart || latest.startOfMonth || "—";
+  const rows = [
+    ["plan", esc(latest.membershipType || "—")],
+    ["period start", esc(cycle)],
+  ];
+  if (typeof onDemand.used === "number") {
+    rows.push(["on-demand", onDemand.enabled ? String(onDemand.used) : "off"]);
+  }
   let big = `<small>usage data</small>`;
-  if (reqLim > 0) {
-    big = `${reqUsed} <small>/ ${reqLim} reqs</small>`;
-    rows.push(["requests left", reqLim - reqUsed]);
+  if (typeof plan.used === "number" && typeof plan.limit === "number") {
+    big = `${plan.used} <small>/ ${plan.limit}</small>`;
+    if (typeof plan.remaining === "number") rows.push(["remaining", plan.remaining]);
+    if (typeof plan.totalPercentUsed === "number") {
+      rows.push(["used", `${plan.totalPercentUsed.toFixed(1)}%`]);
+    }
   } else {
+    const u = latest.usage || {};
     const ks = Object.keys(u).filter((k) => k !== "startOfMonth").slice(0, 3);
     rows.push(["models", esc(ks.join(", ") || "—")]);
   }
-  const series = snaps.filter((s) => s.ok && s.usage).map((s) =>
-    Object.entries(s.usage)
-      .filter(([k, v]) => k !== "startOfMonth" && v && typeof v === "object" && typeof v.requestsUsed === "number")
-      .reduce((a, [, v]) => a + v.requestsUsed, 0));
+  const series = snaps
+    .filter((s) => s.ok && typeof s.plan?.used === "number")
+    .map((s) => s.plan.used);
   return card("Cursor", chipOk(), big, rows, sparkline(series), latest.date);
 }
 
@@ -184,11 +190,17 @@ function buildStatus(usage, cursor, oc) {
   };
   check(usage, "openrouter", "OpenRouter");
   check(usage, "deepseek", "DeepSeek");
-  check(cursor, "cursor", "Cursor");
+  const cursorLatest = (cursor?.snapshots || []).slice(-1)[0];
+  if (cursorLatest && cursorLatest.ok === false) {
+    anyErr = true;
+    warnings.push(`Cursor error (${esc(cursorLatest.date)}): ${esc(cursorLatest.error || "unknown")}`);
+  }
   if (usage && (usage.snapshots || []).length === 0) {
     warnings.push("OpenRouter/DeepSeek: no snapshots yet — add the two secrets in repo Settings → Actions and run the workflow.");
   }
-  if (!cursor) warnings.push("Cursor: no data file yet — run scripts/push_data.sh cursor on a machine with Cursor.");
+  if (!cursor || !(cursor.snapshots || []).length) {
+    warnings.push("Cursor: no snapshots yet — run ./scripts/token_usage.sh push cursor on this Mac.");
+  }
   if (!oc) warnings.push("OpenCode: no data file yet — run scripts/push_data.sh opencode on this machine.");
   return { warnings, anyErr };
 }
