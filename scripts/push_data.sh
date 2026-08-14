@@ -6,12 +6,25 @@
 #   ./scripts/push_data.sh cursor     # on a machine with Cursor installed
 #   ./scripts/push_data.sh opencode   # on the machine that runs opencode
 #
-# Auth for the push: a fine-grained PAT with contents:write on the repo, passed
-# as CURSOR_GITHUB_TOKEN / OPENCODE_GITHUB_TOKEN. Optional repo override:
-# CURSOR_REPO_REMOTE / OPENCODE_REPO_REMOTE (default lucas-albers-lz4/token-usage).
-# With no token set, pushes to the existing "origin" remote.
+# Auth for the push: SSH `origin` by default. Optional PAT via
+# CURSOR_GITHUB_TOKEN / OPENCODE_GITHUB_TOKEN is passed to Git through
+# GIT_ASKPASS (scripts/git_askpass.sh), never embedded in the remote URL.
 set -euo pipefail
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
 cd "$(dirname "$0")/.."
+
+ENV_FILE="${TOKEN_USAGE_ENV:-$HOME/.config/token-usage/env}"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$ENV_FILE"
+  set +a
+  mode="$(stat -f '%Lp' "$ENV_FILE" 2>/dev/null || stat -c '%a' "$ENV_FILE" 2>/dev/null || echo "")"
+  case "$mode" in
+    600|400) ;;
+    *) echo "warning: $ENV_FILE mode is ${mode:-unknown}; chmod 600 recommended" >&2 ;;
+  esac
+fi
 
 name="${1:?usage: push_data.sh cursor|opencode}"
 case "$name" in
@@ -37,12 +50,16 @@ branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo main)"
 
 if [ -n "${!token_var:-}" ]; then
   repo="${!remote_var:-lucas-albers-lz4/token-usage}"
-  push_url="https://x-access-token:${!token_var}@github.com/${repo}.git"
+  export GIT_ASKPASS="$(pwd)/scripts/git_askpass.sh"
+  export GIT_TERMINAL_PROMPT=0
+  export TOKEN_USAGE_GIT_PASSWORD="${!token_var}"
+  push_url="https://github.com/${repo}.git"
 else
   push_url="origin"
 fi
 
 $collect
+python3 scripts/validate_data.py --also "$name"
 
 git add "$file"
 if git diff --cached --quiet; then

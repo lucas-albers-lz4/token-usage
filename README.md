@@ -14,7 +14,7 @@ plain HTML + one JS file; nothing runs client-side against any API.
 |---|---|---|---|
 | OpenRouter | credits remaining / used / total, per-key cap | `GET /api/v1/auth/key` (official) | GH Action, daily cron |
 | DeepSeek | balance (total / granted / topped-up, CNY) | `GET /user/balance` (official) | GH Action, daily cron |
-| Cursor | usage per model (requests used/limit), billing period | undocumented `GET /api/usage?user=` via session token read from local Cursor state | local cron on a Cursor machine |
+| Cursor | plan used/limit, membership, billing cycle | undocumented `GET /api/usage-summary` via session JWT in local Cursor `state.vscdb` | local launchd on this Mac |
 | OpenCode | calls, in/out/reasoning/cache tokens, cost, per provider+model | `~/.local/share/opencode/opencode.db` (message ledger) | local cron on the opencode machine |
 
 API keys live only in GitHub Actions secrets or in local env — **never** in the
@@ -23,21 +23,19 @@ repo. The committed data files contain numbers only.
 ## Pipeline
 
 ```
-GitHub Actions (daily 03:17 UTC + manual)          Local machines (daily cron)
+GitHub Actions (daily 03:17 UTC + manual)          This Mac (launchd 07:00 local)
 ┌──────────────────────────────────────┐           ┌──────────────────────────────────────┐
-│ scripts/collect_usage.py             │           │ scripts/collect_cursor.py            │
+│ scripts/collect_usage.py             │           │ ./scripts/token_usage.sh push cursor │
 │   → OpenRouter /auth/key             │           │   → token from Cursor state.vscdb    │
-│   → DeepSeek /user/balance           │           │   → GET cursor.com/api/usage         │
-│ scripts/validate_data.py (gate)      │           │ scripts/collect_opencode.py          │
-│ commit data/usage.json → push        │           │   → incremental read of opencode.db  │
-└──────────────────────────────────────┘           │ commit data/cursor.json /            │
-                                                   │        data/opencode.json → push     │
-                                                   └──────────────────────────────────────┘
+│   → DeepSeek /user/balance           │           │   → GET /api/usage-summary           │
+│ scripts/validate_data.py (gate)      │           │ commit data/cursor.json → push       │
+│ commit data/usage.json → push        │           │                                      │
+└──────────────────────────────────────┘           └──────────────────────────────────────┘
         both push to main → GitHub Pages redeploys → index.html fetches the 3 JSON files
 ```
 
-`scripts/push_data.sh <cursor|opencode>` collects **and** commits **and** pushes
-from the machine that owns the local data — that's the "post it back" step.
+`./scripts/token_usage.sh push cursor` collects **and** commits **and** pushes
+from this Mac — that's the "post it back" step.
 
 ## Layout
 
@@ -45,9 +43,12 @@ from the machine that owns the local data — that's the "post it back" step.
 .github/workflows/collect.yml   scheduled collector (OpenRouter + DeepSeek)
 scripts/collect_usage.py        GH-Action collector (stdlib only)
 scripts/validate_data.py        schema gate for data/usage.json (CI)
-scripts/collect_cursor.py       Cursor snapshot (run on a Cursor machine)
+scripts/token_usage.sh          doctor / collect / push / install / status / test
+scripts/collect_cursor.py       Cursor snapshot (this Mac; usage-summary)
+scripts/test_collect_cursor.py  cookie + compact-summary unit tests
 scripts/collect_opencode.py     opencode DB snapshot (run on the opencode machine)
-scripts/push_data.sh            collect + commit + push, per local data source
+scripts/push_data.sh            collect + validate + commit + push
+AGENTS.md                       agent/operator contract (commands, secrets, PR gates)
 data/usage.json                 committed output (OpenRouter + DeepSeek)
 data/cursor.json                committed output (Cursor)
 data/opencode.json              committed output (OpenCode)
@@ -69,41 +70,58 @@ index.html + assets/            static page, renders the three files
    the secrets exist — expected).
 5. Open `https://<owner>.github.io/token-usage/`.
 
-## Cursor machine (the "post it back" side)
+## Cursor machine (this Mac)
 
-On either machine that runs Cursor: clone the repo, then run daily:
+Cursor has no public personal usage API. The collector reads the session JWT
+from Cursor's local `state.vscdb` (never committed) and calls
+`GET https://cursor.com/api/usage-summary`. Stay logged into Cursor so the
+JWT stays fresh.
 
-```bash
-./scripts/push_data.sh cursor
-```
-
-The script reads the session token from Cursor's local `state.vscdb`
-(`~/.config/Cursor/...` on Linux, `~/Library/Application Support/Cursor/...`
-on macOS, `%APPDATA%\Cursor\...` on Windows), calls Cursor's undocumented
-usage endpoint, commits `data/cursor.json`, and pushes.
-
-Push auth: a **fine-grained PAT** (Contents: read/write on this repo) as
-`CURSOR_GITHUB_TOKEN` in the environment (or `CURSOR_REPO_REMOTE` to point at
-a fork). Without a token it pushes to the existing `origin`.
-
-Cron examples (adjust paths):
+One-time on this Mac:
 
 ```bash
-# Linux/macOS — every day at 07:00
-7 7 * * * cd /path/to/token-usage && CURSOR_GITHUB_TOKEN=ghp_... ./scripts/push_data.sh cursor
-# Windows Task Scheduler: schtasks /create /tn cursor-usage /tr "cmd /c cd /d C:\path\token-usage && set CURSOR_GITHUB_TOKEN=ghp_...&& scripts\push_data.sh cursor" /sc daily /st 07:00
+./scripts/token_usage.sh doctor cursor     # token + API + git remote
+./scripts/token_usage.sh install cursor    # launchd, daily 07:00 local
+./scripts/token_usage.sh push cursor       # first snapshot + git push via origin
 ```
 
-Notes: the token comes straight from the local Cursor install, so it stays
-fresh as long as Cursor is logged in on that machine; the endpoint is
-undocumented and can drift — the snapshot records the error instead of dying.
+After that: nothing. `token_usage.sh` is the only command you need:
+
+| command | what it does |
+|---|---|
+| `doctor` | checks DB, JWT expiry, usage-summary |
+| `collect` | writes `data/cursor.json`, no git |
+| `push` | collect + validate + commit + `git push` |
+| `install` / `uninstall` / `status` | macOS LaunchAgent |
+
+Push auth: this clone already uses SSH `origin`, so no GitHub PAT is required.
+If you ever push from a machine without SSH, put a fine-grained PAT (Contents:
+read/write on this repo) in `~/.config/token-usage/env`:
+
+```
+CURSOR_GITHUB_TOKEN=ghp_...
+```
+
+Optional: `CURSOR_REPO_REMOTE=owner/token-usage`. The env file is sourced by
+`token_usage.sh` / `push_data.sh` and is not in the repo (`chmod 600`).
+
+Logs: `~/Library/Logs/token-usage-cursor.log`
+
+The LaunchAgent plist is **not** in git. Re-run `install` on a new Mac after
+cloning. Support loop: `status` → `doctor` → `collect` → `push`.
+
+Notes: `/api/usage?user=` is vestigial (often only empty `gpt-4` counters).
+The snapshot stores plan used/limit from `/api/usage-summary`. If the
+undocumented endpoint drifts, the snapshot records the error instead of dying.
+
+Agent/operator detail (commands, secrets, merge gates) lives in `AGENTS.md`.
 
 ## OpenCode machine (this box)
 
 OpenCode runs only on this machine via Hermes, so:
 
 ```bash
-./scripts/push_data.sh opencode
+./scripts/token_usage.sh push opencode
 ```
 
 reads `~/.local/share/opencode/opencode.db` (the per-call message ledger),
@@ -132,9 +150,16 @@ OPENROUTER_API_URL=http://127.0.0.1:8099 DEEPSEEK_API_URL=http://127.0.0.1:8099 
 python3 scripts/validate_data.py
 ```
 
-For Cursor: `CURSOR_TOKEN=user_mock%3A%3Aabc CURSOR_API_URL=http://127.0.0.1:8099 python3 scripts/collect_cursor.py`
-(the mock above doesn't serve `/usage` — add it). For opencode:
+For Cursor: `python3 scripts/collect_cursor.py --doctor` (live) or
+`CURSOR_TOKEN=user_mock%3A%3Aabc CURSOR_API_URL=http://127.0.0.1:8099 python3 scripts/collect_cursor.py`
+(the mock above doesn't serve `/usage-summary` — add it). For opencode:
 `OPENCODE_DB=/path/to/any/opencode.db python3 scripts/collect_opencode.py`.
+
+## Review gates (code PRs)
+
+Before merging collector/dashboard changes: Luna, Bugbot, and a security
+review (see `AGENTS.md`). Data-only snapshot commits from launchd do not
+need that loop.
 
 ## Extending
 
@@ -148,7 +173,7 @@ trusted local scripts.
 
 - **First workflow run fails** — expected until the two secrets exist.
 - **Cursor shows an error snapshot** — endpoint drift or expired session;
-  re-login to Cursor on that machine so `state.vscdb` refreshes the token.
+  re-login to Cursor on this Mac, then `./scripts/token_usage.sh doctor cursor`.
 - **opencode totals stop growing after a DB migration** — opencode changed its
   storage; delete `data/opencode.json` once to re-seed from the new ledger.
 - **`git push` from the Action fails with non-fast-forward** — the workflow
