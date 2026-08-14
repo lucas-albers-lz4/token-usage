@@ -5,7 +5,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from collect_cursor import build_cookie, compact_summary, extract_user_id
+from collect_cursor import build_cookie, compact_summary, extract_user_id, plan_is_usable
 
 
 class CookieTests(unittest.TestCase):
@@ -44,6 +44,12 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(snap["plan"]["used"], 10)
         self.assertEqual(snap["plan"]["limit"], 100)
         self.assertNotIn("bonusTooltip", snap)
+        self.assertNotIn("autoModelSelectedDisplayMessage", snap)
+
+    def test_empty_plan_is_not_usable(self):
+        snap = compact_summary({"individualUsage": {}}, "user_ABC")
+        self.assertIsNone(snap["plan"])
+        self.assertFalse(plan_is_usable(snap))
 
 
 if __name__ == "__main__":

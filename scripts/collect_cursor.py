@@ -176,31 +176,55 @@ def compact_summary(summary, user_id):
         "billingCycleEnd": summary.get("billingCycleEnd"),
         "plan": plan,
         "onDemand": on_demand,
-        "autoModelSelectedDisplayMessage": summary.get("autoModelSelectedDisplayMessage"),
-        "namedModelSelectedDisplayMessage": summary.get("namedModelSelectedDisplayMessage"),
     }
+
+
+def plan_is_usable(snap):
+    plan = (snap or {}).get("plan") or {}
+    return isinstance(plan.get("used"), (int, float)) and isinstance(plan.get("limit"), (int, float))
+
+
+def compact_legacy_usage(usage):
+    models = {}
+    if not isinstance(usage, dict):
+        return models
+    for key, block in usage.items():
+        if key == "startOfMonth" or not isinstance(block, dict):
+            continue
+        row = {}
+        for field in ("numRequests", "numRequestsTotal", "numTokens", "maxRequestUsage"):
+            if field in block:
+                row[field] = block[field]
+        if row:
+            models[key] = row
+    return models
 
 
 def fetch_snapshot(token):
     user_id = extract_user_id(token)
     if not user_id:
         raise ValueError("could not extract userId from token")
+    summary_err = "usage-summary missing plan used/limit"
     try:
         summary = http_json("GET", f"{API_BASE}/usage-summary", token, user_id)
-        if isinstance(summary, dict) and summary.get("individualUsage"):
-            return compact_summary(summary, user_id)
+        if isinstance(summary, dict):
+            snap = compact_summary(summary, user_id)
+            if plan_is_usable(snap):
+                return snap
     except Exception as exc:
         summary_err = short_error(exc)
-    else:
-        summary_err = "usage-summary missing individualUsage"
     usage = http_json("GET", f"{API_BASE}/usage?user={user_id}", token, user_id)
-    return {
+    snap = {
         "ok": True,
         "userId": user_id,
-        "startOfMonth": usage.get("startOfMonth"),
-        "usage": usage,
+        "billingCycleStart": usage.get("startOfMonth") if isinstance(usage, dict) else None,
+        "startOfMonth": usage.get("startOfMonth") if isinstance(usage, dict) else None,
+        "legacyModels": compact_legacy_usage(usage),
         "warning": f"fell back to /usage ({summary_err})",
     }
+    if not plan_is_usable(snap) and not snap["legacyModels"]:
+        raise ValueError(f"no plan in usage-summary and empty /usage ({summary_err})")
+    return snap
 
 
 def load_snapshots():

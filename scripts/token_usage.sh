@@ -24,6 +24,13 @@ fi
 
 cmd="${1:-}"
 target="${2:-cursor}"
+case "$target" in
+  cursor|opencode) ;;
+  *)
+    echo "unknown target: $target (use cursor|opencode)" >&2
+    exit 2
+    ;;
+esac
 label="com.lucasalbers.token-usage.${target}"
 plist="$HOME/Library/LaunchAgents/${label}.plist"
 log_out="$HOME/Library/Logs/token-usage-${target}.log"
@@ -81,6 +88,10 @@ uid="$(id -u)"
 
 case "$cmd" in
   doctor)
+    if [ "$target" != cursor ]; then
+      echo "doctor is implemented for cursor only" >&2
+      exit 2
+    fi
     python3 "$ROOT/scripts/collect_${target}.py" --doctor
     echo "git remote: $(git remote get-url origin 2>/dev/null || echo none)"
     echo "env file: $([ -f "$ENV_FILE" ] && echo "$ENV_FILE" || echo "none (SSH origin is enough on this machine)")"

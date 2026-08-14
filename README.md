@@ -121,7 +121,7 @@ Agent/operator detail (commands, secrets, merge gates) lives in `AGENTS.md`.
 OpenCode runs only on this machine via Hermes, so:
 
 ```bash
-./scripts/push_data.sh opencode
+./scripts/token_usage.sh push opencode
 ```
 
 reads `~/.local/share/opencode/opencode.db` (the per-call message ledger),

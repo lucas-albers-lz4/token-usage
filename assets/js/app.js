@@ -151,7 +151,7 @@ function renderOpenCode(oc) {
   const latest = snaps[snaps.length - 1];
   if (!latest) {
     return card("OpenCode (local)", chipMuted("no data yet"), "—",
-      [["setup", "run <code>scripts/push_data.sh opencode</code> on this machine"]], "");
+      [["setup", "run <code>./scripts/token_usage.sh push opencode</code> on this machine"]], "");
   }
   const t = latest.totals || {};
   const rows = [
@@ -201,7 +201,7 @@ function buildStatus(usage, cursor, oc) {
   if (!cursor || !(cursor.snapshots || []).length) {
     warnings.push("Cursor: no snapshots yet — run ./scripts/token_usage.sh push cursor on this Mac.");
   }
-  if (!oc) warnings.push("OpenCode: no data file yet — run scripts/push_data.sh opencode on this machine.");
+  if (!oc) warnings.push("OpenCode: no data file yet — run ./scripts/token_usage.sh push opencode on this machine.");
   return { warnings, anyErr };
 }
 

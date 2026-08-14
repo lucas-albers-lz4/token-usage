@@ -31,6 +31,7 @@ launchd. `push_data.sh` is the git half; call it via `token_usage.sh push`.
   the raw dashboard payload, never write the JWT.
 - Push uses SSH `origin` on this clone. PAT is optional:
   `~/.config/token-usage/env` with `CURSOR_GITHUB_TOKEN` (`chmod 600`, not git).
+  Git receives it via `GIT_ASKPASS`, never as `https://token@...`.
 - Launchd label: `com.lucasalbers.token-usage.cursor`. Plist lives under
   `~/Library/LaunchAgents/` (not in this repo). Logs:
   `~/Library/Logs/token-usage-cursor.log`.
