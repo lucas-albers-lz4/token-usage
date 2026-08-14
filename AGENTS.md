@@ -7,8 +7,9 @@ Daily credit/spend snapshots. Keys never go in the repo. Collectors write
 
 `./scripts/token_usage.sh` (doctor / collect / push / install / status /
 uninstall / test). Do not invent a second wrapper. `push_data.sh` is the git
-half; call it via `token_usage.sh push`. Host CI gate:
-`python3 scripts/validate_data.py` (`--also cursor` when needed).
+half; call it via `token_usage.sh push`. Host CI:
+`python3 scripts/validate_data.py`. Local Cursor snapshots also need
+`--also cursor`.
 
 ## Hazards
 
@@ -18,9 +19,10 @@ half; call it via `token_usage.sh push`. Host CI gate:
 - Cursor token: `ItemTable.cursorAuth/accessToken` in Cursor `state.vscdb`.
   Primary API: `GET https://cursor.com/api/usage-summary`. `/api/usage?user=`
   is vestigial — fallback only.
-- Snapshot: compact `plan` / `onDemand` only — never dump the raw dashboard
-  payload, never write the JWT or `userId`. Dashboard card reads `plan`, not
-  `usage.gpt-4`.
+- Snapshot fields: `date`, `ok`, `membershipType`, `billingCycleStart`,
+  `billingCycleEnd`, `plan`, `onDemand`. Compact `plan`/`onDemand` only — never
+  dump the raw dashboard payload, never write the JWT or `userId`. Dashboard
+  card reads `plan`, not `usage.gpt-4`.
 - Push uses SSH `origin`. Optional PAT via `GIT_ASKPASS`, never
   `https://token@...`.
 - Launchd label `com.lucasalbers.token-usage.cursor` — plist under
