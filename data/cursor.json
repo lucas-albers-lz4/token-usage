@@ -9,12 +9,12 @@
       "billingCycleEnd": "2026-09-13T20:10:21.000Z",
       "plan": {
         "enabled": true,
-        "used": 4713,
+        "used": 7000,
         "limit": 7000,
-        "remaining": 2287,
-        "autoPercentUsed": 5.64375,
-        "apiPercentUsed": 1.7999999999999998,
-        "totalPercentUsed": 5.179120879120879
+        "remaining": 0,
+        "autoPercentUsed": 9.547500000000001,
+        "apiPercentUsed": 1.9545454545454546,
+        "totalPercentUsed": 8.629670329670331
       },
       "onDemand": {
         "enabled": false,
