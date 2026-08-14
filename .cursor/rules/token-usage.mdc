@@ -1,19 +1,12 @@
 ---
-description: token-usage repo conventions
+description: token-usage — load AGENTS.md; secrets and entry-point traps
 alwaysApply: true
 ---
 
 # token-usage
 
-- Entry point: `./scripts/token_usage.sh` (doctor / collect / push / install /
-  status / test). Do not add a second wrapper.
-- Python collectors are stdlib-only. No pip deps.
-- Never commit or print API keys, `CURSOR_TOKEN`, JWTs, or
-  `~/.config/token-usage/env`.
-- Cursor: `GET /api/usage-summary` → compact `plan` / `onDemand` in
-  `data/cursor.json`. `/api/usage?user=` is fallback only. Launchd is local
-  (`~/Library/LaunchAgents/`), not checked in.
-- Provider errors are `ok: false` snapshots. Fail the process only when
-  auth/config is missing.
-- Dashboard is vanilla `index.html` + `assets/js/app.js`.
-- Code PRs: Luna + Bugbot + security review before merge.
+Read [AGENTS.md](AGENTS.md).
+
+- Entry point: `./scripts/token_usage.sh` only.
+- Never print or commit JWTs, API keys, or `~/.config/token-usage/env`.
+- Stdlib Python only.
