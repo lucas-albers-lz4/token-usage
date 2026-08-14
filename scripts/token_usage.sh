@@ -20,6 +20,11 @@ if [ -f "$ENV_FILE" ]; then
   # shellcheck disable=SC1090
   . "$ENV_FILE"
   set +a
+  mode="$(stat -f '%Lp' "$ENV_FILE" 2>/dev/null || stat -c '%a' "$ENV_FILE" 2>/dev/null || echo "")"
+  case "$mode" in
+    600|400) ;;
+    *) echo "warning: $ENV_FILE mode is ${mode:-unknown}; chmod 600 recommended" >&2 ;;
+  esac
 fi
 
 cmd="${1:-}"

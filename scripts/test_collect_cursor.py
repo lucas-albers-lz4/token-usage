@@ -5,7 +5,13 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from collect_cursor import build_cookie, compact_summary, extract_user_id, plan_is_usable
+from collect_cursor import (
+    build_cookie,
+    compact_legacy_usage,
+    compact_summary,
+    extract_user_id,
+    plan_is_usable,
+)
 
 
 class CookieTests(unittest.TestCase):
@@ -37,19 +43,36 @@ class SummaryTests(unittest.TestCase):
                     "plan": {"enabled": True, "used": 10, "limit": 100, "remaining": 90},
                     "onDemand": {"enabled": False, "used": 0},
                 },
-            },
-            "user_ABC",
+            }
         )
         self.assertTrue(snap["ok"])
         self.assertEqual(snap["plan"]["used"], 10)
         self.assertEqual(snap["plan"]["limit"], 100)
+        self.assertNotIn("userId", snap)
         self.assertNotIn("bonusTooltip", snap)
         self.assertNotIn("autoModelSelectedDisplayMessage", snap)
 
     def test_empty_plan_is_not_usable(self):
-        snap = compact_summary({"individualUsage": {}}, "user_ABC")
+        snap = compact_summary({"individualUsage": {}})
         self.assertIsNone(snap["plan"])
         self.assertFalse(plan_is_usable(snap))
+
+    def test_compact_legacy_usage_allowlists_counters(self):
+        models = compact_legacy_usage(
+            {
+                "startOfMonth": "2026-08-13T00:00:00.000Z",
+                "gpt-4": {
+                    "numRequests": 1,
+                    "numRequestsTotal": 2,
+                    "numTokens": 3,
+                    "maxRequestUsage": None,
+                    "secret": "drop-me",
+                },
+            }
+        )
+        self.assertEqual(models["gpt-4"]["numRequests"], 1)
+        self.assertNotIn("secret", models["gpt-4"])
+        self.assertNotIn("startOfMonth", models)
 
 
 if __name__ == "__main__":

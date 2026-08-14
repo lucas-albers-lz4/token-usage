@@ -26,9 +26,9 @@ launchd. `push_data.sh` is the git half; call it via `token_usage.sh push`.
   `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`.
 - Primary API: `GET https://cursor.com/api/usage-summary` (undocumented).
   `/api/usage?user=` is vestigial (often empty `gpt-4` counters) — fallback only.
-- Snapshot: `{date, ok, userId, membershipType, billingCycleStart,
+- Snapshot: `{date, ok, membershipType, billingCycleStart,
   billingCycleEnd, plan, onDemand}`. Compact `plan`/`onDemand` only — never dump
-  the raw dashboard payload, never write the JWT.
+  the raw dashboard payload, never write the JWT or `userId`.
 - Push uses SSH `origin` on this clone. PAT is optional:
   `~/.config/token-usage/env` with `CURSOR_GITHUB_TOKEN` (`chmod 600`, not git).
   Git receives it via `GIT_ASKPASS`, never as `https://token@...`.

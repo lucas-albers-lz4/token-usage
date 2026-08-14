@@ -111,18 +111,14 @@ def check_cursor(data, errors):
             if "error" not in snap or not isinstance(snap["error"], str):
                 errors.append(f"{tag}: ok=false but no string 'error'")
             continue
-        plan = snap.get("plan")
-        if isinstance(plan, dict):
-            for field in ("used", "limit"):
-                if field in plan and not is_number(plan[field]):
-                    errors.append(f"{tag}.plan.{field} must be numeric")
-            if not (is_number(plan.get("used")) and is_number(plan.get("limit"))):
-                if not isinstance(snap.get("legacyModels"), dict):
-                    errors.append(f"{tag}: ok=true but plan is missing used/limit")
-        elif isinstance(snap.get("legacyModels"), dict) and snap["legacyModels"]:
-            pass
-        else:
-            errors.append(f"{tag}: ok=true but neither plan nor legacyModels")
+        plan = snap.get("plan") if isinstance(snap.get("plan"), dict) else {}
+        for field in ("used", "limit"):
+            if field in plan and not is_number(plan[field]):
+                errors.append(f"{tag}.plan.{field} must be numeric")
+        plan_ok = is_number(plan.get("used")) and is_number(plan.get("limit"))
+        legacy = snap.get("legacyModels") if isinstance(snap.get("legacyModels"), dict) else {}
+        if not plan_ok and not legacy:
+            errors.append(f"{tag}: ok=true needs plan used/limit or non-empty legacyModels")
         blob = json.dumps(snap)
         if "eyJ" in blob or ("::" in blob and "user_" in blob):
             errors.append(f"{tag}: snapshot looks like it contains a session token")

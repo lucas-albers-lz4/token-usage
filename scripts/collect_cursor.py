@@ -164,12 +164,11 @@ def compact_plan(block):
     return out or None
 
 
-def compact_summary(summary, user_id):
+def compact_summary(summary):
     plan = compact_plan((summary.get("individualUsage") or {}).get("plan"))
     on_demand = compact_plan((summary.get("individualUsage") or {}).get("onDemand"))
     return {
         "ok": True,
-        "userId": user_id,
         "membershipType": summary.get("membershipType"),
         "limitType": summary.get("limitType"),
         "billingCycleStart": summary.get("billingCycleStart"),
@@ -208,7 +207,7 @@ def fetch_snapshot(token):
     try:
         summary = http_json("GET", f"{API_BASE}/usage-summary", token, user_id)
         if isinstance(summary, dict):
-            snap = compact_summary(summary, user_id)
+            snap = compact_summary(summary)
             if plan_is_usable(snap):
                 return snap
     except Exception as exc:
@@ -216,7 +215,6 @@ def fetch_snapshot(token):
     usage = http_json("GET", f"{API_BASE}/usage?user={user_id}", token, user_id)
     snap = {
         "ok": True,
-        "userId": user_id,
         "billingCycleStart": usage.get("startOfMonth") if isinstance(usage, dict) else None,
         "startOfMonth": usage.get("startOfMonth") if isinstance(usage, dict) else None,
         "legacyModels": compact_legacy_usage(usage),
@@ -311,8 +309,7 @@ def main(argv=None):
         snap.update(fetch_snapshot(token))
         plan = snap.get("plan") or {}
         print(
-            f"cursor: ok (user={snap.get('userId')}, "
-            f"plan={plan.get('used')}/{plan.get('limit')}, "
+            f"cursor: ok (plan={plan.get('used')}/{plan.get('limit')}, "
             f"membership={snap.get('membershipType')})"
         )
         if snap.get("warning"):
