@@ -277,10 +277,11 @@ def doctor():
     try:
         snap = fetch_snapshot(token)
         plan = snap.get("plan") or {}
+        used = plan.get("used")
+        limit = plan.get("limit")
         print(
-            f"api: ok membership={snap.get('membershipType')} "
-            f"plan={plan.get('used')}/{plan.get('limit')} "
-            f"cycle={snap.get('billingCycleStart')}"
+            f"api: ok plan={used}/{limit}"
+            + (" membership=ok" if snap.get("membershipType") else "")
         )
         if snap.get("warning"):
             print(f"  warning: {snap['warning']}")
