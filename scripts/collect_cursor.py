@@ -279,8 +279,13 @@ def doctor():
         plan = snap.get("plan") or {}
         used = plan.get("used")
         limit = plan.get("limit")
+        plan_text = (
+            f"{used}/{limit}"
+            if plan_is_usable(snap)
+            else "unavailable (legacy usage)"
+        )
         print(
-            f"api: ok plan={used}/{limit}"
+            f"api: ok plan={plan_text}"
             + (" membership=ok" if snap.get("membershipType") else "")
         )
         if snap.get("warning"):
